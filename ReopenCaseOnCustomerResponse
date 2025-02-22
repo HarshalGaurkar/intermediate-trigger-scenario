@@ -1,0 +1,26 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case:  If a customer replies to a closed case (by adding a new comment), the case should be reopened to ensure the support team addresses their concerns.
+*/
+
+trigger ReopenCaseOnCustomerResponse on CaseComment (after insert) {
+    Set<Id> caseIds = new Set<Id>();
+
+    for (CaseComment cc : Trigger.new) {
+        caseIds.add(cc.ParentId);
+    }
+
+    List<Case> casesToUpdate = new List<Case>();
+
+    for (Case cs : [SELECT Id, Status FROM Case WHERE Id IN :caseIds]) {
+        if (cs.Status == 'Closed') {
+            cs.Status = 'Reopened';
+            casesToUpdate.add(cs);
+        }
+    }
+
+    if (!casesToUpdate.isEmpty()) {
+        update casesToUpdate;
+    }
+}
