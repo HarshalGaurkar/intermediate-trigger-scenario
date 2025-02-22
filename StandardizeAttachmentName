@@ -1,0 +1,23 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case: All uploaded attachments should follow a standard naming format:
+RecordType_RecordName_Timestamp.pdf
+*/
+
+trigger StandardizeAttachmentName on Attachment (before insert) {
+    Map<Id, String> parentNames = new Map<Id, String>();
+
+    for (Account acc : [SELECT Id, Name FROM Account WHERE Id IN :Trigger.newMap.keySet()]) {
+        parentNames.put(acc.Id, 'Account_' + acc.Name);
+    }
+    for (Opportunity opp : [SELECT Id, Name FROM Opportunity WHERE Id IN :Trigger.newMap.keySet()]) {
+        parentNames.put(opp.Id, 'Opportunity_' + opp.Name);
+    }
+
+    for (Attachment att : Trigger.new) {
+        if (parentNames.containsKey(att.ParentId)) {
+            att.Name = parentNames.get(att.ParentId) + '_' + System.now().formatGmt('yyyyMMdd_HHmmss') + '.pdf';
+        }
+    }
+}
