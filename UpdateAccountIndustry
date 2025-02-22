@@ -1,0 +1,25 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case:  If most Contacts in an Account have a similar job title (e.g., Engineers), update the Industry field accordingly.
+*/
+
+trigger UpdateAccountIndustry on Contact (after insert, after update, after delete) {
+    Set<Id> accountIds = new Set<Id>();
+
+    for (Contact con : Trigger.isDelete ? Trigger.old : Trigger.new) {
+        accountIds.add(con.AccountId);
+    }
+
+    for (Account acc : [SELECT Id, Industry, (SELECT Title FROM Contacts) FROM Account WHERE Id IN :accountIds]) {
+        Map<String, Integer> titleCount = new Map<String, Integer>();
+        for (Contact con : acc.Contacts) {
+            titleCount.put(con.Title, titleCount.getOrDefault(con.Title, 0) + 1);
+        }
+
+        if (!titleCount.isEmpty()) {
+            acc.Industry = titleCount.keySet().iterator().next();
+            update acc;
+        }
+    }
+}
