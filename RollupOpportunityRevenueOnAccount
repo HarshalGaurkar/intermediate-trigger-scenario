@@ -1,0 +1,40 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case:  The company wants to track Total Revenue (Total_Revenue__c) on an Account by summing the Amount of all its Opportunities
+*/
+
+trigger RollupOpportunityRevenueOnAccount on Opportunity (after insert, after update, after delete, after undelete) {
+    Set<Id> accountIds = new Set<Id>();
+
+    if (Trigger.isDelete) {
+        for (Opportunity opp : Trigger.old) {
+            if (opp.AccountId != null) {
+                accountIds.add(opp.AccountId);
+            }
+        }
+    } else {
+        for (Opportunity opp : Trigger.new) {
+            if (opp.AccountId != null) {
+                accountIds.add(opp.AccountId);
+            }
+        }
+    }
+
+    if (!accountIds.isEmpty()) {
+        List<Account> accountsToUpdate = new List<Account>();
+
+        for (Account acc : [SELECT Id, (SELECT Amount FROM Opportunities WHERE StageName != 'Closed Lost') FROM Account WHERE Id IN :accountIds]) {
+            Decimal totalRevenue = 0;
+            for (Opportunity opp : acc.Opportunities) {
+                totalRevenue += opp.Amount;
+            }
+            acc.Total_Revenue__c = totalRevenue;
+            accountsToUpdate.add(acc);
+        }
+
+        if (!accountsToUpdate.isEmpty()) {
+            update accountsToUpdate;
+        }
+    }
+}
