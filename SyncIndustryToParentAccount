@@ -1,0 +1,28 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case: A business want to populate the child account industry to the parent account.
+*/
+
+
+trigger SyncIndustryToParentAccount on Account (after insert, after update) {
+    Map<Id, Account> parentAccounts = new Map<Id, Account>();
+
+    for (Account acc : Trigger.new) {
+        if (acc.ParentId != null) {
+            parentAccounts.put(acc.ParentId, null);
+        }
+    }
+
+    if (!parentAccounts.isEmpty()) {
+        parentAccounts.putAll([SELECT Id, Industry FROM Account WHERE Id IN :parentAccounts.keySet()]);
+        
+        for (Account acc : Trigger.new) {
+            if (acc.ParentId != null && parentAccounts.containsKey(acc.ParentId)) {
+                Account parent = parentAccounts.get(acc.ParentId);
+                parent.Industry = acc.Industry;
+            }
+        }
+        update parentAccounts.values();
+    }
+}
