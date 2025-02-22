@@ -1,0 +1,16 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case: To ensure security, block attachments with potentially malicious file types like .exe, .zip, .bat, etc.  
+*/
+
+trigger PreventRestrictedFileTypes on Attachment (before insert) {
+    List<String> restrictedExtensions = new List<String>{'exe', 'zip', 'bat', 'cmd', 'dll'};
+
+    for (Attachment att : Trigger.new) {
+        String fileExtension = att.Name.substringAfterLast('.').toLowerCase();
+        if (restrictedExtensions.contains(fileExtension)) {
+            att.addError('Uploading ' + fileExtension.toUpperCase() + ' files is not allowed.');
+        }
+    }
+}
