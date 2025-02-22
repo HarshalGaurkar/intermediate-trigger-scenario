@@ -1,0 +1,38 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case:  A sales team wants to track the Latest Task Completion Date (Latest_Task_Date__c) on an Opportunity based on the most recently completed Task
+*/
+
+trigger RollupLatestTaskDateOnOpportunity on Task (after insert, after update, after delete) {
+    Set<Id> opportunityIds = new Set<Id>();
+
+    if (Trigger.isDelete) {
+        for (Task t : Trigger.old) {
+            if (t.WhatId != null && String.valueOf(t.WhatId).startsWith('006')) { // 006 is Opportunity prefix
+                opportunityIds.add(t.WhatId);
+            }
+        }
+    } else {
+        for (Task t : Trigger.new) {
+            if (t.WhatId != null && String.valueOf(t.WhatId).startsWith('006')) {
+                opportunityIds.add(t.WhatId);
+            }
+        }
+    }
+
+    if (!opportunityIds.isEmpty()) {
+        List<Opportunity> oppsToUpdate = new List<Opportunity>();
+
+        for (Opportunity opp : [SELECT Id, (SELECT ActivityDate FROM Tasks WHERE Status = 'Completed' ORDER BY ActivityDate DESC LIMIT 1) FROM Opportunity WHERE Id IN :opportunityIds]) {
+            if (!opp.Tasks.isEmpty()) {
+                opp.Latest_Task_Date__c = opp.Tasks[0].ActivityDate;
+                oppsToUpdate.add(opp);
+            }
+        }
+
+        if (!oppsToUpdate.isEmpty()) {
+            update oppsToUpdate;
+        }
+    }
+}
