@@ -1,0 +1,13 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case: A business whant to capture the birthdate of the applicant when user enter the age on record or update on record.
+*/
+
+trigger CalculateBirthdate on Contact () {
+    for (Contact con : Trigger.new) {
+        if (con.Age__c != null) {
+            con.Birthdate = Date.today().addYears(-Integer.valueOf(con.Age__c));
+        }
+    }
+}
