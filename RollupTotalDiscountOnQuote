@@ -1,0 +1,40 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case: The finance team wants to track the Total Discount Applied (Total_Discount__c) on a Quote by summing the Discount__c field from all Quote Line Items 
+*/
+
+trigger RollupTotalDiscountOnQuote on QuoteLineItem (after insert, after update, after delete, after undelete) {
+    Set<Id> quoteIds = new Set<Id>();
+
+    if (Trigger.isDelete) {
+        for (QuoteLineItem qli : Trigger.old) {
+            if (qli.QuoteId != null) {
+                quoteIds.add(qli.QuoteId);
+            }
+        }
+    } else {
+        for (QuoteLineItem qli : Trigger.new) {
+            if (qli.QuoteId != null) {
+                quoteIds.add(qli.QuoteId);
+            }
+        }
+    }
+
+    if (!quoteIds.isEmpty()) {
+        List<Quote> quotesToUpdate = new List<Quote>();
+
+        for (Quote q : [SELECT Id, (SELECT Discount__c FROM QuoteLineItems) FROM Quote WHERE Id IN :quoteIds]) {
+            Decimal totalDiscount = 0;
+            for (QuoteLineItem qli : q.QuoteLineItems) {
+                totalDiscount += qli.Discount__c;
+            }
+            q.Total_Discount__c = totalDiscount;
+            quotesToUpdate.add(q);
+        }
+
+        if (!quotesToUpdate.isEmpty()) {
+            update quotesToUpdate;
+        }
+    }
+}
