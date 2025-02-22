@@ -1,0 +1,26 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case: A business whant to take a follow up by creating the task when lead is converted
+*/
+
+trigger CreateTaskOnLeadConversion on Lead (after update) {
+    List<Task> tasks = new List<Task>();
+
+    for (Lead ld : Trigger.new) {
+        if (ld.IsConverted && !Trigger.oldMap.get(ld.Id).IsConverted) {
+            Task t = new Task(
+                Subject = 'Follow-up with new contact',
+                WhatId = ld.ConvertedContactId,
+                OwnerId = ld.OwnerId,
+                Status = 'Not Started',
+                Priority = 'High',
+                ActivityDate = Date.today().addDays(5)
+            );
+            tasks.add(t);
+        }
+    }
+    if (!tasks.isEmpty()) {
+        insert tasks;
+    }
+}
