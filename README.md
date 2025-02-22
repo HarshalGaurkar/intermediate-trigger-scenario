@@ -1,6 +1,8 @@
 # intermediate-trigger-scenario
 This repository will be having intermediate trigger scenario which can we used in salesforce for business need
 
+**Below Are the details description of the trigger with there name and usecase**
+
 **Trigger_1: SyncIndustryToParentAccount**
 - Scenario: Update Parent Account Industry Based on Child Account
 - Use Case: A business want to populate the child account industry to the parent account.
