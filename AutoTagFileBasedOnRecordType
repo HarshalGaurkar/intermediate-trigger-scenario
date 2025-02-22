@@ -1,0 +1,35 @@
+/*
+Developer_Name: Harshal Gaurkar
+Date: 22/02/2025
+Use_Case: When a user uploads a file (ContentDocumentLink) related to an Opportunity, Case, or Account, the file should be automatically tagged based on the record type for easier organization. 
+*/
+
+
+trigger AutoTagFileBasedOnRecordType on ContentDocumentLink (after insert) {
+    Map<Id, String> recordTags = new Map<Id, String>();
+
+    // Fetch record types
+    for (Opportunity opp : [SELECT Id FROM Opportunity WHERE Id IN :Trigger.newMap.keySet()]) {
+        recordTags.put(opp.Id, 'Sales Document');
+    }
+    for (Case cs : [SELECT Id FROM Case WHERE Id IN :Trigger.newMap.keySet()]) {
+        recordTags.put(cs.Id, 'Support Document');
+    }
+    for (Account acc : [SELECT Id FROM Account WHERE Id IN :Trigger.newMap.keySet()]) {
+        recordTags.put(acc.Id, 'Customer Document');
+    }
+
+    List<ContentVersion> contentVersionsToUpdate = new List<ContentVersion>();
+
+    for (ContentDocumentLink cdl : Trigger.new) {
+        if (recordTags.containsKey(cdl.LinkedEntityId)) {
+            ContentVersion cv = [SELECT Id, Title FROM ContentVersion WHERE ContentDocumentId = :cdl.ContentDocumentId ORDER BY CreatedDate DESC LIMIT 1];
+            cv.Title = recordTags.get(cdl.LinkedEntityId) + ' - ' + cv.Title;
+            contentVersionsToUpdate.add(cv);
+        }
+    }
+
+    if (!contentVersionsToUpdate.isEmpty()) {
+        update contentVersionsToUpdate;
+    }
+}
