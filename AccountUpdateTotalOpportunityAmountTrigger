@@ -1,0 +1,52 @@
+/* 
+Scenario: Update Account’s 'Total Opportunity Amount' field with the sum of all related Opportunities' Amount when the Account is updated.
+Use Case: Ensure the Account reflects the total revenue from all its Opportunities.
+Triggering Object: Account
+Event: after update
+Action: Calculate and update 'Total Opportunity Amount'.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Automatically keep the Account's 'Total Opportunity Amount' field updated.
+Scenario: When an Account is updated, update its Total Opportunity Amount field with the sum of all related Opportunities' Amount
+*/
+
+Trigger AccountUpdateTotalOpportunityAmountTrigger on Account (after update) {
+    Set<Id> accountIds = new Set<Id>();
+
+    // Collect all updated Account IDs
+    for (Account acc : Trigger.new) {
+        accountIds.add(acc.Id);
+    }
+
+    // Query Opportunities and calculate total amount for each Account
+    Map<Id, Decimal> accountTotalAmountMap = new Map<Id, Decimal>();
+
+    for (AggregateResult ar : [
+        SELECT AccountId, SUM(Amount) totalAmount
+        FROM Opportunity
+        WHERE AccountId IN :accountIds
+        GROUP BY AccountId
+    ]) {
+        accountTotalAmountMap.put((Id) ar.get('AccountId'), (Decimal) ar.get('totalAmount'));
+    }
+
+    // Prepare list of Accounts to update
+    List<Account> accountsToUpdate = new List<Account>();
+
+    for (Account acc : Trigger.new) {
+        if (accountTotalAmountMap.containsKey(acc.Id)) {
+            Account updatedAcc = new Account(Id = acc.Id);
+            updatedAcc.Total_Opportunity_Amount__c = accountTotalAmountMap.get(acc.Id);
+            accountsToUpdate.add(updatedAcc);
+        }
+    }
+
+    // Update Accounts with new total opportunity amount
+    if (!accountsToUpdate.isEmpty()) {
+        update accountsToUpdate;
+    }
+}
+
+
+
