@@ -1,0 +1,47 @@
+/* 
+Scenario: Automatically add a default Opportunity Line Item when an Opportunity is created.
+Use Case: Ensure every new Opportunity has at least one product assigned.
+Triggering Object: Opportunity
+Event: after insert
+Action: Fetch a product from the standard price book and create an Opportunity Line Item.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensure an Opportunity always has a default product added upon creation.
+*/
+
+trigger AutoAddOpportunityLineItemTrigger on Opportunity (after insert) {
+    List<OpportunityLineItem> oliList = new List<OpportunityLineItem>();
+
+    // Fetch a random Product2 ID with a Standard Price Book Entry
+    List<PricebookEntry> pricebookEntries = [SELECT Id, Product2Id, UnitPrice 
+                                             FROM PricebookEntry 
+                                             WHERE IsActive = true AND Pricebook2.IsStandard = true 
+                                             LIMIT 1];
+
+    if (pricebookEntries.isEmpty()) {
+        System.debug('No active standard price book entries found.');
+        return; // Exit if no product found
+    }
+
+    PricebookEntry pbe = pricebookEntries[0]; // Use the first available product
+
+    // Loop through all new Opportunities and create a Line Item
+    for (Opportunity opp : Trigger.new) {
+        if (opp.StageName != null) { // Ensuring opportunity has a stage
+            OpportunityLineItem oli = new OpportunityLineItem();
+            oli.OpportunityId = opp.Id;
+            oli.PricebookEntryId = pbe.Id;
+            oli.Quantity = 1;  // Default quantity
+            oli.TotalPrice = pbe.UnitPrice; // Use product price
+            oliList.add(oli);
+        }
+    }
+
+    // Insert the Opportunity Line Items
+    if (!oliList.isEmpty()) {
+        insert oliList;
+    }
+}
+
+
