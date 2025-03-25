@@ -1,0 +1,45 @@
+/* 
+Scenario: Send an email to a Contact when inserted using a predefined email template.
+Use Case: Automatically send a welcome email to every new Contact.
+Triggering Object: Contact
+Event: after insert
+Action: Fetch the email template and send an email to the new Contact.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensure every new Contact receives a welcome email upon creation.
+*/
+
+Trigger SendEmailToNewContactTrigger on Contact (after insert) {
+    // Fetch the email template (Update the template ID if needed)
+    List<EmailTemplate> templates = [SELECT Id FROM EmailTemplate WHERE DeveloperName = 'New_Contact_Welcome_Template' LIMIT 1];
+
+    if (templates.isEmpty()) {
+        System.debug('No email template found.');
+        return; // Exit if template not found
+    }
+
+    Id templateId = templates[0].Id;
+    List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
+
+    for (Contact con : Trigger.new) {
+        if (con.Email != null) {
+            Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+            email.setTargetObjectId(con.Id); // Contact must have an email for this
+            email.setTemplateId(templateId);
+            email.setSaveAsActivity(false);
+            emails.add(email);
+        }
+    }
+
+    // Send emails
+    if (!emails.isEmpty()) {
+        Messaging.sendEmail(emails);
+    }
+}
+
+
+
+
+
+
