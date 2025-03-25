@@ -1,0 +1,43 @@
+/* 
+Scenario: Update all related Opportunities' Stage to 'Closed Lost' if the Opportunity was created more than 30 days ago and is not 'Closed Won'.
+Use Case: When an Account is updated, check its related Opportunities and update their stage accordingly.
+Triggering Object: Account
+Event: after update
+Action: Update Opportunity stages.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensure Opportunities older than 30 days are marked as 'Closed Lost' when an Account is updated.
+*/
+
+Trigger AccountUpdateTrigger on Account (after update) {
+    List<Opportunity> oppsToUpdate = new List<Opportunity>();
+    Date todayMinus30 = System.today().addDays(-30);
+
+    // Get all updated accounts
+    Set<Id> accountIds = new Set<Id>();
+    for (Account acc : Trigger.new) {
+        accountIds.add(acc.Id);
+    }
+
+    // Query related opportunities that match the conditions
+    List<Opportunity> relatedOpps = [
+        SELECT Id, StageName, CreatedDate 
+        FROM Opportunity 
+        WHERE AccountId IN :accountIds 
+        AND StageName != 'Closed Won' 
+        AND CreatedDate < :todayMinus30
+    ];
+
+    // Update opportunities stage
+    for (Opportunity opp : relatedOpps) {
+        opp.StageName = 'Closed Lost';
+        oppsToUpdate.add(opp);
+    }
+
+    if (!oppsToUpdate.isEmpty()) {
+        update oppsToUpdate;
+    }
+}
+
+
