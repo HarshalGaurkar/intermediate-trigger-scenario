@@ -1,0 +1,27 @@
+/* 
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensure System Admin gets notified upon Account creation.
+Scenario: When a new Account is inserted, an email notification is sent to all System Admin users
+*/
+
+Trigger AccountInsertEmailTrigger on Account (after insert) {
+    List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
+
+    // Fetch System Admin Users
+    List<User> adminUsers = [SELECT Id, Email FROM User WHERE Profile.Name = 'System Administrator'];
+
+    for (Account acc : Trigger.new) {
+        for (User admin : adminUsers) {
+            Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+            email.setToAddresses(new List<String>{admin.Email});
+            email.setSubject('New Account Created');
+            email.setPlainTextBody('An account has been created and the name is \"' + acc.Name + '\".');
+            emails.add(email);
+        }
+    }
+
+    if (!emails.isEmpty()) {
+        Messaging.sendEmail(emails);
+    }
+}
