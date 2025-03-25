@@ -1,0 +1,47 @@
+/* 
+Trigger_1: AccountCreateClientContactTrigger
+Scenario: When an Account is inserted, create a Contact with the Account Name and update the Account’s 'Client Contact' lookup field.
+Use Case: Automatically assign a default Client Contact to newly created Accounts.
+Triggering Object: Account
+Event: after insert
+Action: Create a Contact and link it to the Account.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensure each new Account has an associated Contact in the 'Client Contact' lookup field.
+*/
+
+Trigger AccountCreateClientContactTrigger on Account (after insert) {
+    List<Contact> contactsToInsert = new List<Contact>();
+    Map<Id, Contact> accountContactMap = new Map<Id, Contact>();
+
+    // Step 1: Create Contacts for new Accounts
+    for (Account acc : Trigger.new) {
+        Contact newContact = new Contact(
+            LastName = acc.Name, // Contact's Last Name will be the Account Name
+            AccountId = acc.Id
+        );
+        contactsToInsert.add(newContact);
+        accountContactMap.put(acc.Id, newContact);
+    }
+
+    if (!contactsToInsert.isEmpty()) {
+        insert contactsToInsert;
+    }
+
+    // Step 2: Update Accounts with the created Contact in Client Contact lookup field
+    List<Account> accountsToUpdate = new List<Account>();
+
+    for (Contact con : contactsToInsert) {
+        Account accToUpdate = new Account(
+            Id = con.AccountId,
+            Client_Contact__c = con.Id  // Assign the newly created contact to Client Contact lookup field
+        );
+        accountsToUpdate.add(accToUpdate);
+    }
+
+    if (!accountsToUpdate.isEmpty()) {
+        update accountsToUpdate;
+    }
+}
+
