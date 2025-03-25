@@ -1,0 +1,50 @@
+/* 
+Trigger_1: SendPDFToLeadTrigger
+Scenario: Send an email with an attached PDF when a Lead is created.
+Use Case: Automatically send a welcome email with an informational PDF to new leads.
+Triggering Object: Lead
+Event: after insert
+Action: Fetch the pre-uploaded PDF from Documents and email it to the new Lead.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensure every new lead receives an email with a PDF attachment automatically.
+*/
+
+Trigger SendPDFToLeadTrigger on Lead (after insert) {
+    // Fetch the PDF file from Documents (Update with your actual Document Name)
+    List<Document> docs = [SELECT Id, Name FROM Document WHERE Name = 'Welcome_PDF' LIMIT 1];
+
+    if (docs.isEmpty()) {
+        System.debug('No document found with the given name.');
+        return; // Exit if document not found
+    }
+
+    Id documentId = docs[0].Id;
+
+    // Iterate through new Leads and send an email
+    List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
+
+    for (Lead lead : Trigger.new) {
+        if (lead.Email != null) {
+            Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+            email.setToAddresses(new List<String>{ lead.Email });
+            email.setSubject('Welcome');
+            email.setPlainTextBody('Please find the attached PDF.');
+            
+            // Attach PDF to the email
+            Messaging.EmailFileAttachment attachment = new Messaging.EmailFileAttachment();
+            attachment.setFileName(docs[0].Name);
+            attachment.setBody([SELECT Body FROM Document WHERE Id = :documentId].Body);
+            email.setFileAttachments(new List<Messaging.EmailFileAttachment>{ attachment });
+
+            emails.add(email);
+        }
+    }
+
+    // Send emails
+    if (!emails.isEmpty()) {
+        Messaging.sendEmail(emails);
+    }
+}
+
