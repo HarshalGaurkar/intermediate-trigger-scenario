@@ -1,0 +1,63 @@
+/* 
+Scenario: Send an email to the Opportunity's Account Client Contact when an Opportunity Line Item is created.
+Use Case: Automatically notify the Client Contact when a new product is added to an Opportunity.
+Triggering Object: OpportunityLineItem
+Event: after insert
+Action: Fetch the email template and send an email to the Client Contact.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Automatically notify the Client Contact when a new product is added to an Opportunity.
+/*
+
+Trigger SendEmailToClientContactTrigger on OpportunityLineItem (after insert) {
+    // Fetch the email template (Update the template DeveloperName if needed)
+    List<EmailTemplate> templates = [SELECT Id FROM EmailTemplate WHERE DeveloperName = 'Opportunity_LineItem_Notification' LIMIT 1];
+
+    if (templates.isEmpty()) {
+        System.debug('No email template found.');
+        return; // Exit if no template found
+    }
+
+    Id templateId = templates[0].Id;
+    List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
+
+    // Fetch related Opportunity, Account, and Client Contact
+    Set<Id> oppIds = new Set<Id>();
+    for (OpportunityLineItem oli : Trigger.new) {
+        oppIds.add(oli.OpportunityId);
+    }
+
+    Map<Id, Opportunity> oppMap = new Map<Id, Opportunity>(
+        [SELECT Id, AccountId FROM Opportunity WHERE Id IN :oppIds]
+    );
+
+    Set<Id> accountIds = new Set<Id>();
+    for (Opportunity opp : oppMap.values()) {
+        accountIds.add(opp.AccountId);
+    }
+
+    Map<Id, Account> accountMap = new Map<Id, Account>(
+        [SELECT Id, Client_Contact__c FROM Account WHERE Id IN :accountIds]
+    );
+
+    for (OpportunityLineItem oli : Trigger.new) {
+        Opportunity opp = oppMap.get(oli.OpportunityId);
+        if (opp != null) {
+            Account acc = accountMap.get(opp.AccountId);
+            if (acc != null && acc.Client_Contact__c != null) {
+                Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+                email.setTargetObjectId(acc.Client_Contact__c);
+                email.setTemplateId(templateId);
+                email.setSaveAsActivity(false);
+                emails.add(email);
+            }
+        }
+    }
+
+    // Send emails
+    if (!emails.isEmpty()) {
+        Messaging.sendEmail(emails);
+    }
+}
+
