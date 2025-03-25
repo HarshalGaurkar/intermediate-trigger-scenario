@@ -1,0 +1,39 @@
+/* 
+Scenario: Assign an incremented Serial Number to each Opportunity Line Item, even if previous records are deleted.
+Use Case: Ensure a unique and sequential serial number is assigned to Opportunity Line Items for tracking.
+Triggering Object: OpportunityLineItem
+Event: before insert
+Action: Assign incremented Serial No.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Maintain a sequential Serial Number for Opportunity Line Items that continues even if previous records are deleted.
+*/
+
+
+Trigger OpportunityLineItemSerialNoTrigger on OpportunityLineItem (before insert) {
+    Map<Id, Integer> oppSerialMap = new Map<Id, Integer>();
+
+    // Step 1: Find the highest Serial No for each Opportunity
+    for (AggregateResult ar : [
+        SELECT OpportunityId, MAX(Serial_No__c) maxSerial
+        FROM OpportunityLineItem
+        WHERE OpportunityId IN :Trigger.newMap.keySet()
+        GROUP BY OpportunityId
+    ]) {
+        if (ar.get('maxSerial') != null) {
+            oppSerialMap.put((Id) ar.get('OpportunityId'), Integer.valueOf(ar.get('maxSerial')));
+        } else {
+            oppSerialMap.put((Id) ar.get('OpportunityId'), 0);
+        }
+    }
+
+    // Step 2: Assign incremented Serial No to new Line Items
+    for (OpportunityLineItem oli : Trigger.new) {
+        Integer currentSerial = oppSerialMap.containsKey(oli.OpportunityId) ? oppSerialMap.get(oli.OpportunityId) : 0;
+        currentSerial++;
+        oli.Serial_No__c = String.valueOf(currentSerial);
+        oppSerialMap.put(oli.OpportunityId, currentSerial);
+    }
+}
+
