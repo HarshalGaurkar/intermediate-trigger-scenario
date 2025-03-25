@@ -1,0 +1,24 @@
+/* 
+Scenario: Restrict task deletion to only System Administrators(Only System Administrator users should be able to delete Tasks. If any other user tries to delete a task, the system should throw an error.).
+Use Case: Prevent unauthorized task deletions by non-admin users.
+Triggering Object: Task
+Event: before delete
+Action: Check user profile and restrict deletion if the user is not a System Administrator.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensure that only System Administrators can delete tasks, preventing accidental data loss.
+*/
+
+Trigger RestrictTaskDeletionTrigger on Task (before delete) {
+    // Get the current user's profile name
+    String profileName = [SELECT Profile.Name FROM User WHERE Id = :UserInfo.getUserId()].Profile.Name;
+
+    // Restrict deletion if the user is not a System Administrator
+    if (profileName != 'System Administrator') {
+        for (Task t : Trigger.old) {
+            t.addError('You do not have permission to delete tasks. Only System Administrators can delete tasks.');
+        }
+    }
+}
+
