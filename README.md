@@ -98,3 +98,87 @@ This repository will be having intermediate trigger scenario which can we used i
 - Event: After Insert, After Update, After Delete, After Undelete
 - Action: Whenever a QuoteLineItem is created, updated, or deleted, update the Total Discount Applied on the related Quote
 
+**Trigger_Name: AccountInsertNotificationTrigger**
+- Scenario: Write a trigger on Account, when an account is inserted, notify the admin
+- Use Case: Ensure System Admin gets notified upon Account creation.
+- Triggering Object: Account
+- Event: After Insert
+- Action: Account Insert.
+
+
+**Trigger_Name: AccountUpdateTrigger**
+- Scenario: Update all related Opportunities' Stage to 'Closed Lost' if the Opportunity was created more than 30 days ago and is not 'Closed Won'.
+- Use Case: When an Account is updated, check its related Opportunities and update their stage accordingly.
+- Triggering Object: Account
+- Event: after update
+- Action: Update Opportunity stages.
+
+
+**Trigger_Name: AccountInsertEmailTrigger**
+- Scenario: When a new Account is inserted, an email notification is sent to all System Admin users.
+- Use Case: Ensure System Admin gets notified upon Account creation.
+- Triggering Object: Account
+- Event: after insert
+- Action: Account Insert.
+
+
+**Trigger_Name: AccountUpdateTotalOpportunityAmountTrigger**
+- Scenario: Update Account’s 'Total Opportunity Amount' field with the sum of all related Opportunities' Amount when the Account is updated.
+- Use Case: Ensure the Account reflects the total revenue from all its Opportunities.
+- Triggering Object: Account
+- Event: after update
+- Action: Calculate and update 'Total Opportunity Amount'.
+
+**Trigger_Name: AccountCreateClientContactTrigger**
+- Scenario: When an Account is inserted, create a Contact with the Account Name and update the Account’s 'Client Contact' lookup field.
+- Use Case: Automatically assign a default Client Contact to newly created Accounts.
+- Triggering Object: Account
+- Event: after insert
+- Action: Create a Contact and link it to the Account.
+
+**Trigger_Name: OpportunityLineItemSerialNoTrigger**
+- Scenario: Assign an incremented Serial Number to each Opportunity Line Item, even if previous records are deleted.
+- Use Case: Ensure a unique and sequential serial number is assigned to Opportunity Line Items for tracking.
+- Triggering Object: OpportunityLineItem
+- Event: before insert
+- Action: Assign incremented Serial No.
+
+**Trigger_Name: RestrictTaskDeletionTrigger**
+- Scenario: Restrict task deletion to only System Administrators.
+- Use Case: Prevent unauthorized task deletions by non-admin users.
+- Triggering Object: Task
+- Event: before delete
+- Action: Check user profile and restrict deletion if the user is not a System Administrator.
+
+**Trigger_Name: SendPDFToLeadTrigger**
+- Scenario: Send an email with an attached PDF when a Lead is created.
+- Use Case: Automatically send a welcome email with an informational PDF to new leads.
+- Triggering Object: Lead
+- Event: after insert
+- Action: Fetch the pre-uploaded PDF from Documents and email it to the new Lead.
+
+**Trigger_Name: SendEmailToNewContactTrigger**
+- Scenario: Send an email to a Contact when inserted using a predefined email template.
+- Use Case: Automatically send a welcome email to every new Contact.
+- Triggering Object: Contact
+- Event: after insert
+- Action: Fetch the email template and send an email to the new Contact.
+
+**Trigger_Name: SendEmailToClientContactTrigger**
+- Scenario: Send an email to the Opportunity's Account Client Contact when an Opportunity Line Item is created.
+- Use Case: Automatically notify the Client Contact when a new product is added to an Opportunity.
+- Triggering Object: OpportunityLineItem
+- Event: after insert
+- Action: Fetch the email template and send an email to the Client Contact.
+
+**Trigger_Name: AutoAddOpportunityLineItemTrigger**
+- Scenario: Automatically add a default Opportunity Line Item when an Opportunity is created.
+- Use Case: Ensure every new Opportunity has at least one product assigned.
+- Triggering Object: Opportunity
+- Event: after insert
+- Action: Fetch a product from the standard price book and create an Opportunity Line Item.
+
+
+
+
+
