@@ -1,0 +1,41 @@
+/* 
+Trigger_16: SyncMultiSelectPicklistOnOpportunityTrigger
+Scenario: When an Opportunity's Multi-select Picklist is updated, update the same field on the related Account.
+Use Case: Ensure that the Multi-select Picklist values remain in sync between Opportunity and Account.
+Triggering Object: Opportunity
+Event: after update
+Action: Identify updated Opportunities, check if Multi-select Picklist has changed, fetch related Accounts, and update their Multi-select Picklist field.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Maintain consistency in picklist values between Opportunity and Account.
+*/
+
+trigger SyncMultiSelectPicklistOnOpportunityTrigger on Opportunity (after update) {
+    Set<Id> accountIds = new Set<Id>();
+    Map<Id, String> accountPicklistValues = new Map<Id, String>();
+
+    for (Opportunity opp : Trigger.new) {
+        Opportunity oldOpp = Trigger.oldMap.get(opp.Id);
+
+        // Check if Multi-select Picklist has changed
+        if (opp.Multi_Select_Picklist__c != oldOpp.Multi_Select_Picklist__c && opp.AccountId != null) {
+            accountIds.add(opp.AccountId);
+            accountPicklistValues.put(opp.AccountId, opp.Multi_Select_Picklist__c);
+        }
+    }
+
+    if (!accountIds.isEmpty()) {
+        List<Account> accountsToUpdate = [SELECT Id, Multi_Select_Picklist__c FROM Account WHERE Id IN :accountIds];
+
+        for (Account acc : accountsToUpdate) {
+            acc.Multi_Select_Picklist__c = accountPicklistValues.get(acc.Id);
+        }
+
+        if (!accountsToUpdate.isEmpty()) {
+            update accountsToUpdate;
+        }
+    }
+}
+
+
