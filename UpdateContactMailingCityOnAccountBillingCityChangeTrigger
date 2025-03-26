@@ -1,0 +1,35 @@
+/* 
+Trigger_Name: UpdateContactMailingCityOnAccountBillingCityChangeTrigger
+Scenario: When an Account's BillingCity is updated, update all related Contacts' MailingCity with the new BillingCity.
+Use Case: Ensure that a Contact's MailingCity stays in sync with the associated Account's BillingCity.
+Triggering Object: Account
+Event: after update
+Action: Identify updated Accounts, check if BillingCity has changed, fetch related Contacts, and update their MailingCity.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Maintain address consistency between Account and its related Contacts.
+*/
+
+trigger UpdateContactMailingCityOnAccountBillingCityChangeTrigger on Account (after update) {
+    List<Contact> contactsToUpdate = new List<Contact>();
+
+    for (Account acc : Trigger.new) {
+        Account oldAcc = Trigger.oldMap.get(acc.Id);
+        
+        // Check if BillingCity has changed
+        if (acc.BillingCity != oldAcc.BillingCity) {
+            List<Contact> relatedContacts = [SELECT Id, MailingCity FROM Contact WHERE AccountId = :acc.Id];
+
+            for (Contact con : relatedContacts) {
+                con.MailingCity = acc.BillingCity;
+                contactsToUpdate.add(con);
+            }
+        }
+    }
+
+    if (!contactsToUpdate.isEmpty()) {
+        update contactsToUpdate;
+    }
+}
+
