@@ -1,0 +1,30 @@
+/* 
+Trigger_Name: CreateAssetOnOpportunityLineItemTrigger
+Scenario: When an OpportunityLineItem is created, an Asset should be automatically created for the newly created opportunity
+*/
+
+trigger CreateAssetOnOpportunityLineItemTrigger on OpportunityLineItem (after insert) {
+    List<Asset> assetsToInsert = new List<Asset>();
+    Set<Id> accountIds = new Set<Id>();
+
+    for (OpportunityLineItem oli : Trigger.new) {
+        if (oli.Opportunity.AccountId != null) {
+            accountIds.add(oli.Opportunity.AccountId);
+
+            Asset newAsset = new Asset(
+                Name = oli.PricebookEntry.Product2.Name, // Asset name based on the product
+                AccountId = oli.Opportunity.AccountId, // Link to the related account
+                Product2Id = oli.PricebookEntry.Product2Id, // Associate with Product
+                Quantity = oli.Quantity, // Set quantity from Opportunity Line Item
+                Status = 'Active' // Default status
+            );
+            assetsToInsert.add(newAsset);
+        }
+    }
+
+    if (!assetsToInsert.isEmpty()) {
+        insert assetsToInsert;
+    }
+}
+
+
