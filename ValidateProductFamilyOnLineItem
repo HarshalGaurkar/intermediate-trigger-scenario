@@ -1,0 +1,42 @@
+/* 
+Trigger_Name: ValidateProductFamilyOnLineItem
+Scenario: Validate that the Opportunity Product Type matches the Opportunity Line Item Product Family.
+Use Case: Prevent mismatched product selections in Opportunities.
+Triggering Object: OpportunityLineItem
+Events: before insert, before update
+Action: Compare Opportunity.Product_Type__c with Product2.Family, and restrict mismatches with an error.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensuring product consistency within Opportunities by enforcing matching Product Families.
+*/
+
+trigger ValidateProductFamilyOnLineItem on OpportunityLineItem (before insert, before update) {
+    Set<Id> oppIds = new Set<Id>();
+    
+    // Collect Opportunity IDs from Line Items
+    for (OpportunityLineItem oli : Trigger.new) {
+        oppIds.add(oli.OpportunityId);
+    }
+
+    // Fetch the Opportunity Product Type for these Opportunities
+    Map<Id, String> oppProductTypeMap = new Map<Id, String>();
+    for (Opportunity opp : [SELECT Id, Product_Type__c FROM Opportunity WHERE Id IN :oppIds]) {
+        oppProductTypeMap.put(opp.Id, opp.Product_Type__c);
+    }
+
+    // Validate each Opportunity Line Item
+    for (OpportunityLineItem oli : Trigger.new) {
+        if (oli.PricebookEntryId != null) {
+            Product2 product = [SELECT Family FROM Product2 WHERE Id = :oli.PricebookEntry.Product2Id LIMIT 1];
+
+            String opportunityProductType = oppProductTypeMap.get(oli.OpportunityId);
+
+            if (opportunityProductType != null && product.Family != opportunityProductType) {
+                oli.addError('The Product family does not match the Opportunity Product Type.');
+            }
+        }
+    }
+}
+
+
