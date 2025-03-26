@@ -1,0 +1,33 @@
+/* 
+Trigger_Name: CreateQuoteOnOpportunityLineItemInsertTrigger
+Scenario: When an Opportunity Line Item is created, a related Quote should be automatically inserted.
+Use Case: Ensure that a Quote is generated whenever a new Opportunity Line Item is added.
+Triggering Object: OpportunityLineItem
+Event: after insert
+Action: Create a Quote linked to the same Opportunity as the inserted Opportunity Line Item.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensure that a Quote is generated whenever a new Opportunity Line Item is added.
+*/
+
+trigger CreateQuoteOnOpportunityLineItemInsertTrigger on OpportunityLineItem (after insert) {
+    List<Quote> quotesToInsert = new List<Quote>();
+
+    for (OpportunityLineItem oli : Trigger.new) {
+        Quote newQuote = new Quote();
+        newQuote.OpportunityId = oli.OpportunityId;
+        newQuote.Name = 'Auto-Generated Quote';
+        newQuote.Status = 'Draft'; // Adjust status based on business requirements
+        newQuote.ExpirationDate = System.today().addDays(30); // Example: Quote valid for 30 days
+        
+        quotesToInsert.add(newQuote);
+    }
+
+    if (!quotesToInsert.isEmpty()) {
+        insert quotesToInsert;
+    }
+}
+
+
+
