@@ -1,0 +1,38 @@
+/* 
+Trigger_12: SendEmailOnAccountTypeChangeTrigger
+Scenario: When an Account's Type changes, notify all associated Contacts via email.
+Use Case: Ensure that Contacts are informed when their associated Account undergoes a Type change.
+Triggering Object: Account
+Event: after update
+Action: Fetch all Contact and send email
+/*
+
+trigger SendEmailOnAccountTypeChangeTrigger on Account (after update) {
+    List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
+
+    for (Account acc : Trigger.new) {
+        Account oldAcc = Trigger.oldMap.get(acc.Id);
+
+        // Check if Account Type has changed
+        if (oldAcc.Type != acc.Type) {
+            // Get all Contacts related to the updated Account
+            List<Contact> relatedContacts = [SELECT Id, Email FROM Contact WHERE AccountId = :acc.Id AND Email != null];
+
+            for (Contact con : relatedContacts) {
+                Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+                email.setToAddresses(new List<String>{con.Email});
+                email.setSubject('Account Update Info');
+                email.setPlainTextBody('Your account information has been updated successfully.\nAccount Name: ' + acc.Name);
+
+                emails.add(email);
+            }
+        }
+    }
+
+    // Send emails in bulk
+    if (!emails.isEmpty()) {
+        Messaging.sendEmail(emails);
+    }
+}
+
+
