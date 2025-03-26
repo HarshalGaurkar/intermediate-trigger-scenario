@@ -1,0 +1,52 @@
+/* 
+Trigger_Name: UpdateTotalOpportunityAmountOnContactUpdate
+Scenario: When a Contact is updated, retrieve the total Opportunity Amount for its Account and update the field "Total Opportunity Amount" on the Account.
+Use Case: Maintain real-time updates of Opportunity revenue linked to an Account whenever related Contacts are modified.
+Triggering Object: Contact
+Event: after update
+Action: Fetch Opportunities related to the updated Contact’s Account, sum up their amounts, and update the Account’s Total Opportunity Amount.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Ensure the Account always has an up-to-date total revenue figure from all associated Opportunities when a Contact is modified.
+*/
+
+trigger UpdateTotalOpportunityAmountOnContactUpdate on Contact (after update) {
+    Set<Id> accountIds = new Set<Id>();
+
+    // Collecting Account IDs from updated contacts
+    for (Contact con : Trigger.new) {
+        if (con.AccountId != null) {
+            accountIds.add(con.AccountId);
+        }
+    }
+
+    if (!accountIds.isEmpty()) {
+        // Query all Opportunities related to the Accounts
+        Map<Id, Decimal> accountOpportunityAmountMap = new Map<Id, Decimal>();
+        for (AggregateResult ar : [
+            SELECT AccountId, SUM(Amount) totalAmount
+            FROM Opportunity
+            WHERE AccountId IN :accountIds AND StageName != 'Closed Lost'
+            GROUP BY AccountId
+        ]) {
+            accountOpportunityAmountMap.put((Id)ar.get('AccountId'), (Decimal)ar.get('totalAmount'));
+        }
+
+        // Updating Account field "Total Opportunity Amount"
+        List<Account> accountsToUpdate = new List<Account>();
+        for (Id accId : accountIds) {
+            Account acc = new Account(
+                Id = accId,
+                Total_Opportunity_Amount__c = accountOpportunityAmountMap.containsKey(accId) ? accountOpportunityAmountMap.get(accId) : 0
+            );
+            accountsToUpdate.add(acc);
+        }
+
+        if (!accountsToUpdate.isEmpty()) {
+            update accountsToUpdate;
+        }
+    }
+}
+
+
