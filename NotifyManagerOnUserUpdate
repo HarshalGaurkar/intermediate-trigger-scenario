@@ -1,0 +1,58 @@
+/* 
+Trigger_Name: NotifyManagerOnUserUpdate
+Scenario: When a User is updated, send an email to their Manager listing the total Accounts they own and the number of Contacts in each Account.
+Use Case: Ensure Managers are informed about their team’s Account assignments and related Contacts in real-time.
+Triggering Object: User
+Event: after update
+Action: Retrieve Accounts owned by the updated User, count related Contacts, and send an email to the User’s Manager.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Improve managerial visibility of Account ownership and related Contacts in Salesforce.
+*/
+
+trigger NotifyManagerOnUserUpdate on User (after update) {
+    List<Messaging.SingleEmailMessage> emails = new List<Messaging.SingleEmailMessage>();
+
+    for (User updatedUser : Trigger.new) {
+        if (updatedUser.ManagerId != null) {
+            // Get the manager's email
+            User manager = [SELECT Email FROM User WHERE Id = :updatedUser.ManagerId LIMIT 1];
+
+            // Fetch accounts owned by the user
+            List<Account> userAccounts = [
+                SELECT Id, Name, (SELECT Id FROM Contacts)
+                FROM Account WHERE OwnerId = :updatedUser.Id
+            ];
+            
+            Integer totalAccounts = userAccounts.size();
+            String accountDetails = '';
+
+            for (Account acc : userAccounts) {
+                accountDetails += acc.Name + ' - ' + acc.Contacts.size() + '\n';
+            }
+
+            // Prepare email content
+            String subject = 'Your Accounts and Number of Related Contacts';
+            String body = 'Dear User,\n\n' +
+                'You have been assigned the following accounts with their related contact count:\n' +
+                'Total Accounts = ' + totalAccounts + '\n' +
+                accountDetails +
+                '\n\nRegards,\nSalesforce Team';
+
+            // Create email message
+            Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+            email.setToAddresses(new List<String>{manager.Email});
+            email.setSubject(subject);
+            email.setPlainTextBody(body);
+            emails.add(email);
+        }
+    }
+
+    // Send the emails
+    if (!emails.isEmpty()) {
+        Messaging.sendEmail(emails);
+    }
+}
+
+
