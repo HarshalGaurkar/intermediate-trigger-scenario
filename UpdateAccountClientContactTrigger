@@ -1,0 +1,41 @@
+/* 
+Trigger_17: UpdateAccountClientContactTrigger
+Scenario: When the Client Contact field on an Opportunity is updated, update the Client Contact field on the related Account.
+Use Case: Ensure that Client Contact information remains consistent between Opportunity and Account.
+Triggering Object: Opportunity
+Event: after update
+Action: Identify updated Opportunities, check if the Client Contact field has changed, fetch related Accounts, and update their Client Contact field.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Maintain consistency of Client Contact details between Opportunity and Account.
+*/
+
+trigger UpdateAccountClientContactTrigger on Opportunity (after update) {
+    Set<Id> accountIds = new Set<Id>();
+    Map<Id, Id> accountClientContacts = new Map<Id, Id>();
+
+    for (Opportunity opp : Trigger.new) {
+        Opportunity oldOpp = Trigger.oldMap.get(opp.Id);
+
+        // Check if Client Contact field has changed
+        if (opp.Client_Contact__c != oldOpp.Client_Contact__c && opp.AccountId != null) {
+            accountIds.add(opp.AccountId);
+            accountClientContacts.put(opp.AccountId, opp.Client_Contact__c);
+        }
+    }
+
+    if (!accountIds.isEmpty()) {
+        List<Account> accountsToUpdate = [SELECT Id, Client_Contact__c FROM Account WHERE Id IN :accountIds];
+
+        for (Account acc : accountsToUpdate) {
+            acc.Client_Contact__c = accountClientContacts.get(acc.Id);
+        }
+
+        if (!accountsToUpdate.isEmpty()) {
+            update accountsToUpdate;
+        }
+    }
+}
+
+
