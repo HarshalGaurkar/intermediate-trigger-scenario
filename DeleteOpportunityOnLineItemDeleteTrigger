@@ -1,0 +1,27 @@
+/* 
+Trigger_Name: DeleteOpportunityOnLineItemDeleteTrigger
+Scenario: When an Opportunity Line Item is deleted, its related Opportunity should also be deleted.
+Use Case: Ensure that an Opportunity is removed if it no longer has any associated products.
+Triggering Object: OpportunityLineItem
+Event: after delete
+Action: Collect all related Opportunity IDs and delete the corresponding Opportunities.
+
+Developer_Name: Harshal Gaurkar
+Date: 23/02/2025 
+Use_Case: Maintain data integrity by removing Opportunities when their line items are deleted.
+*/
+
+trigger DeleteOpportunityOnLineItemDeleteTrigger on OpportunityLineItem (after delete) {
+    Set<Id> opportunityIds = new Set<Id>();
+
+    for (OpportunityLineItem oli : Trigger.old) {
+        opportunityIds.add(oli.OpportunityId);
+    }
+
+    // Fetch opportunities related to the deleted line items
+    List<Opportunity> opportunitiesToDelete = [SELECT Id FROM Opportunity WHERE Id IN :opportunityIds];
+
+    if (!opportunitiesToDelete.isEmpty()) {
+        delete opportunitiesToDelete;
+    }
+}
