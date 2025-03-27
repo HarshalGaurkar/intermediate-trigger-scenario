@@ -174,3 +174,83 @@ This repository will be having intermediate trigger scenario which can we used i
 - Triggering Object: Opportunity
 - Event: after insert
 - Action: Fetch a product from the standard price book and create an Opportunity Line Item.
+
+
+**Trigger_Name: SendEmailOnAccountTypeChangeTrigger**
+- Scenario: When an Account's Type changes, notify all associated Contacts via email.
+- Use Case: Ensure that Contacts are informed when their associated Account undergoes a Type change.
+- Triggering Object: Account
+- Event: after update
+- Action: Fetch all Contact and send email
+
+**Trigger_Name: DeleteOpportunityOnLineItemDeleteTrigger**
+- Scenario: When an Opportunity Line Item is deleted, its related Opportunity should also be deleted.
+- Use Case: Ensure that an Opportunity is removed if it no longer has any associated products.
+- Triggering Object: OpportunityLineItem
+- Event: after delete
+- Action: Collect all related Opportunity IDs and delete the corresponding Opportunities.
+
+**Trigger_Name: CreateQuoteOnOpportunityLineItemInsertTrigger**
+- Scenario: When an Opportunity Line Item is created, a related Quote should be automatically inserted.
+- Use Case: Ensure that a Quote is generated whenever a new Opportunity Line Item is added.
+- Triggering Object: OpportunityLineItem
+- Event: after insert
+- Action: Create a Quote linked to the same Opportunity as the inserted Opportunity Line Item.
+
+**Trigger_Name: UpdateContactMailingCityOnAccountBillingCityChangeTrigger**
+- Scenario: When an Account's BillingCity is updated, update all related Contacts' MailingCity with the new BillingCity.
+- Use Case: Ensure that a Contact's MailingCity stays in sync with the associated Account's BillingCity.
+- Triggering Object: Account
+- Event: after update
+- Action: Identify updated Accounts, check if BillingCity has changed, fetch related Contacts, and update their MailingCity.
+
+**Trigger_Name: SyncMultiSelectPicklistOnOpportunityTrigger**
+- Scenario: When an Opportunity's Multi-select Picklist is updated, update the same field on the related Account.
+- Use Case: Ensure that the Multi-select Picklist values remain in sync between Opportunity and Account.
+- Triggering Object: Opportunity
+- Event: after update
+- Action: Identify updated Opportunities, check if Multi-select Picklist has changed, fetch related Accounts, and update their Multi-select Picklist field.
+
+**Trigger_Name: UpdateAccountClientContactTrigger**
+- Scenario: When the Client Contact field on an Opportunity is updated, update the Client Contact field on the related Account.
+- Use Case: Ensure that Client Contact information remains consistent between Opportunity and Account.
+- Triggering Object: Opportunity
+- Event: after update
+- Action: Identify updated Opportunities, check if the Client Contact field has changed, fetch related Accounts, and update their Client Contact field.
+
+**Trigger_Name: CreateAssetOnOpportunityLineItemTrigger**
+- Scenario: When an OpportunityLineItem is created, an Asset should be automatically created for the opportunity
+- Use Case: When an OpportunityLineItem is created, an Asset should be automatically created for the newly created opportunity
+- Triggering Object: Opportunity
+- Event: after insert
+- Action: Create Asset once opportunity is created
+
+**Trigger_Name: UpdateTotalOpportunityAmountOnContactUpdate**
+- Scenario: When a Contact is updated, retrieve the total Opportunity Amount for its Account and update the field "Total Opportunity Amount" on the Account.
+- Use Case: Maintain real-time updates of Opportunity revenue linked to an Account whenever related Contacts are modified.
+- Triggering Object: Contact
+- Event: after update
+- Action: Fetch Opportunities related to the updated Contact’s Account, sum up their amounts, and update the Account’s Total Opportunity Amount.
+
+**Trigger_Name: NotifyManagerOnUserUpdate**
+- Scenario: When a User is updated, send an email to their Manager listing the total Accounts they own and the number of Contacts in each Account.
+- Use Case: Ensure Managers are informed about their team’s Account assignments and related Contacts in real-time.
+- Triggering Object: User
+- Event: after update
+- Action: Retrieve Accounts owned by the updated User, count related Contacts, and send an email to the User’s Manager.
+
+**Trigger_Name: ValidateProductFamilyOnLineItem**
+- Scenario: Validate that the Opportunity Product Type matches the Opportunity Line Item Product Family.
+- Use Case: Prevent mismatched product selections in Opportunities.
+- Triggering Object: OpportunityLineItem
+- Events: before insert, before update
+- Action: Compare Opportunity.Product_Type__c with Product2.Family, and restrict mismatches with an error.
+
+**Trigger_Name: UpdateProductQuantityOnLineItem**
+- Scenario: Deduct Opportunity Line Item quantities from the Product2 available stock.
+- Use Case: Ensure real-time stock updates when products are added/removed from Opportunities.
+- Triggering Object: OpportunityLineItem
+- Events: after insert, after update, after delete, after undelete
+- Action: Recalculate and update Available_Quantity__c on Product2 based on total quantities in Opportunity Line Items.
+
+
